@@ -14,7 +14,7 @@
 
 1.  Відкрийте Chrome Web Store.
 2.  Знайдіть і встановіть розширення **"User JavaScript and CSS"**.
-    * [**Посилання для Chrome**](https://chrome.google.com/webstore/detail/user-javascript-and-css/nbkmoindjkpbpgenfmgjmocpeahcpikf)
+    * [**Посилання для Chrome**](https://chromewebstore.google.com/detail/user-javascript-and-css/nbhcbdghjpllgmfilhnhkllmkecfmpld)
 
 ![Крок 1: Встановлення розширення User JavaScript and CSS](assets/install_extension.png)
 
