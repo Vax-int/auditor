@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Walletizer
 // @author       VIVA IT Group
-// @version      1.1 Auto refresh countdown & filters
+// @version      1.2 Auto refresh countdown & filters + Binance
 // @description  Balance colorized bar with auto refresh
 // @match        https://www.arbitterminal.online/
 // @grant        none
@@ -19,13 +19,19 @@
   const DEFAULT_THRESHOLDS = { minBalance: 900, minPNL: -250 };
 
   let stored = JSON.parse(localStorage.getItem('thresholdsPanelData')) || {};
-  let thresholds = stored.thresholds || {
+  const INITIAL_THRESHOLDS_PROTOTYPE = {
     MEXC: {...DEFAULT_THRESHOLDS},
     BYBIT: {...DEFAULT_THRESHOLDS},
     BINGX: {...DEFAULT_THRESHOLDS},
     GATEIO: {...DEFAULT_THRESHOLDS},
     BITGET: { minBalance: 850, minPNL: -200 },
+    BINANCE: { minBalance: 700, minPNL: -200 },
   };
+  
+  let thresholds = stored.thresholds
+    ? { ...INITIAL_THRESHOLDS_PROTOTYPE, ...stored.thresholds } 
+    : INITIAL_THRESHOLDS_PROTOTYPE;
+
   let refreshInterval = stored.refreshInterval || 15;
   let countdown = refreshInterval;
 
@@ -92,20 +98,46 @@
         cursor: default;
         white-space: nowrap;
         font-variant-numeric: tabular-nums;
+        /* Фіксуємо початковий фон для миготіння */
+        display: inline-block;
+        padding: 0 2px; 
       }
       #${BAR_ID} .balance.low-balance { color: #dc2626; font-weight: 700;}
       #${BAR_ID} .balance.sufficient-balance { color: #16a34a; font-weight: 700;}
       #${BAR_ID} .pnl.positive { color: #16a34a; }
       #${BAR_ID} .pnl.negative { color: #dc2626; }
       #${BAR_ID} .pnl.invalid { color: gray; font-style: italic; }
+      
+      /* ================================================================= */
+      /* --- ВИПРАВЛЕННЯ: PNL BLINKING (Фіксований Жовтий Текст + Червоний Фон) --- */
+      /* ================================================================= */
+
       #${BAR_ID} .pnl.blinking {
-        animation: blink-red 1.2s infinite;
+        /* Фіксуємо колір тексту на яскраво-жовтий, щоб не миготів сірим */
+        color: #FFFF00 !important; 
         font-weight: 700;
+        /* Застосовуємо миготіння фоном */
+        animation: pnl-bg-blink 0.4s step-start infinite;
+        padding: 0 4px; /* Додаємо відступи, щоб побачити фон */
+        border-radius: 3px;
+        box-shadow: 0 0 5px #FF0000; /* Початкове світіння */
+        background-color: #FF0000; /* Початковий фон */
       }
-      @keyframes blink-red {
-        0%,50%,100% { color: #dc2626; opacity: 1; }
-        25%,75% { color: transparent; opacity: 0.5; }
+      
+      @keyframes pnl-bg-blink {
+        0%, 100% {
+            background-color: #FF0000; /* Яскраво-червоний фон */
+            box-shadow: 0 0 8px #FF0000;
+        }
+        50% {
+            background-color: transparent; /* Прозорий фон */
+            box-shadow: none;
+        }
       }
+      /* ================================================================= */
+      /* --- КІНЕЦЬ ВИПРАВЛЕННЯ --- */
+      /* ================================================================= */
+      
       #${BAR_ID} .refresh-bar-btn {
         margin-left: auto;
         padding: 4px 14px;
@@ -370,6 +402,7 @@
       elPnl.textContent = `PNL: ${pnlRaw}`;
       if (pnlNum === null) elPnl.classList.add('invalid');
       else if (pnlNum < thresh.minPNL) {
+        // Забезпечуємо, що клас blinking застосовується тільки при потребі
         elPnl.classList.remove('positive','negative','invalid');
         elPnl.classList.add('blinking');
         blinkingState[exch] = true;
@@ -460,11 +493,7 @@
       const block = document.createElement('div');
       block.className = 'threshold-block';
 
-      if (idx === exchNames.length - 1) {
-        block.style.flex = '1 1 40%'; // Залишити ширину для біржі
-      } else {
-        block.style.flex = '1 1 45%';
-      }
+			block.style.flex = '1 1 45%';
 
       const label = document.createElement('label');
       label.textContent = exch;
